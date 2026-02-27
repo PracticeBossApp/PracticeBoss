@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guitar Timer - Mobile Optimized</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f3f4f6;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            margin: auto; 
+        }
+
+        .settings {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .settings label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .horizontal-group {
+            display: flex; gap: 0.5rem; justify-content: center;
+        }
+
+        input[type="number"], select {
+            padding: 0.6rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background: white;
+            outline: none;
+        }
+
+        input[type="number"] { width: 80px; }
+        select { width: 100%; max-width: 240px; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1rem;
+            border-radius: 0.8rem;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            display: block;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn:active { opacity: 0.8; transform: scale(0.98); }
+
+        .btn-secondary {
+            background: #6366f1;
+            font-size: 0.85rem;
+            width: auto;
+        }
+
+        .btn-pause { background-color: var(--danger); margin-bottom: 10px; }
+        .btn-play { background-color: var(--success); margin-bottom: 10px; }
+
+        .toggle-btn { max-width: 220px; margin: 0 auto; }
+        .on { background-color: var(--success) !important; }
+        .off { background-color: var(--danger) !important; }
+
+        .timer-circle {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            border: 5px solid #e5e7eb;
+            border-radius: 50%;
+        }
+
+        #exercise-display {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0.5rem 0 1.5rem;
+            color: var(--primary);
+            min-height: 4.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.3;
+        }
+
+        .status-bar {
+            font-size: 0.65rem;
+            color: #9ca3af;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="settings">
+            <div class="settings-row">
+                <label>Interval</label>
+                <div class="horizontal-group">
+                    <input type="number" id="interval-input" value="60" min="5">
+                    <button class="btn btn-secondary" onclick="updateInterval()">Apply</button>
+                </div>
+            </div>
+            
+            <div class="settings-row">
+                <label>Sound Control</label>
+                <div class="input-group">
+                    <button id="announcer-btn" class="btn toggle-btn on" onclick="toggleAnnouncer()">Announcer: ON</button>
+                    <button id="bell-btn" class="btn toggle-btn on" onclick="toggleBell()">Bell: ON</button>
+                    <button id="drone-btn" class="btn toggle-btn off" onclick="toggleDrone()">Drone: OFF</button>
+                    
+                    <select id="drone-select" onchange="updateDroneFrequency()">
+                        <option value="196.00">G3</option><option value="207.65">G#3</option>
+                        <option value="220.00">A3</option><option value="233.08">A#3</option>
+                        <option value="246.94">B3</option><option value="261.63">C4</option>
+                        <option value="277.18">C#4</option><option value="293.66">D4</option>
+                        <option value="311.13">D#4</option><option value="329.63">E4</option>
+                        <option value="349.23">F4</option><option value="369.99">F#4</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="timer-circle" id="timer-display">60</div>
+        
+        <p style="color: #6b7280; margin: 0; font-size: 0.8rem;">Current Exercise:</p>
+        <div id="exercise-display">Ready</div>
+        
+        <button id="play-pause-btn" class="btn btn-pause" onclick="togglePlayPause()">Pause</button>
+        <button class="btn" onclick="triggerNext()">Next Exercise</button>
+        
+        <div class="status-bar">
+            <span id="bell-status-icon">🔔 Bell Active</span>
+            <span id="voice-status-icon">🗣️ Announcer Active</span>
+            <span id="drone-status-icon">🎵 Drone Muted</span>
+        </div>
+    </div>
+
+    <script>
+        const bellAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        const synth = window.speechSynthesis;
+        let femaleVoice = null;
+        let audioCtx = null;
+        let oscillator = null;
+        let gainNode = null;
+
+        let isAnnouncerOn = true;
+        let isBellOn = true;
+        let isDroneOn = false;
+        let isPaused = false;
+        let timerInterval = null;
+        let lastExerciseIndex = -1;
+
+        const exerciseList = [
+            "Play triads only", "Play major scale", "Major Pentatonic", "Major chord arpeggios", 
+            "Play only 3 Notes Per String", "Switch between non-adjacent CAGED shapes",
+            "Sing the notes while playing", "Improvise above the 7th fret",
+            "Improvise between the 3rd and 9th fret", "Improvise below the 7th fret", 
+            "Major scale improvisation without playing adjacent notes", "Connect 2 CAGED shapes",
+            "Play only lines that descend", "Improvise using only one string",
+            "Every time the B string is played, switch positions", "Don't play any notes on the D string",
+            "Improvise using only the top 3 strings", "Improvise using only the bottom 3 strings",
+            "Play thirds up and down CAGED shapes", "Use a third interval to connect 2 CAGED shapes",
+            "Create melodies using big intervals", "Improvise using 2 non-adjacent strings only",
+            "Improvise while always playing two notes at a time"
+        ];
+
+        let maxInterval = 60;
+        let timeLeft = 60;
+        
+        const timerEl = document.getElementById('timer-display');
+        const exerciseEl = document.getElementById('exercise-display');
+        const inputEl = document.getElementById('interval-input');
+        
+        // Buttons
+        const announcerBtn = document.getElementById('announcer-btn');
+        const bellBtn = document.getElementById('bell-btn');
+        const droneBtn = document.getElementById('drone-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        
+        // Icons
+        const voiceStatusIcon = document.getElementById('voice-status-icon');
+        const bellStatusIcon = document.getElementById('bell-status-icon');
+        const droneStatusIcon = document.getElementById('drone-status-icon');
+
+        function unlockAudio() {
+            const silent = new SpeechSynthesisUtterance("");
+            synth.speak(silent);
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioCtx.createGain();
+                gainNode.connect(audioCtx.destination);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function toggleBell() {
+            unlockAudio();
+            isBellOn = !isBellOn;
+            // Update Text
+            bellBtn.innerText = isBellOn ? "Bell: ON" : "Bell: OFF";
+            // Update Color
+            bellBtn.className = isBellOn ? "btn toggle-btn on" : "btn toggle-btn off";
+            // Update Status Bar
+            bellStatusIcon.innerText = isBellOn ? "🔔 Bell Active" : "🔕 Bell Muted";
+        }
+
+        function toggleDrone() {
+            unlockAudio();
+            isDroneOn = !isDroneOn;
+            // Update Text
+            droneBtn.innerText = isDroneOn ? "Drone: ON" : "Drone: OFF";
+            // Update Color
+            droneBtn.className = isDroneOn ? "btn toggle-btn on" : "btn toggle-btn off";
+            // Update Status Bar
+            droneStatusIcon.innerText = isDroneOn ? "🎵 Drone Active" : "🎵 Drone Muted";
+
+            if (isDroneOn) {
+                if (!oscillator) {
+                    oscillator = audioCtx.createOscillator();
+                    oscillator.type = 'sine';
+                    oscillator.connect(gainNode);
+                    oscillator.start();
+                }
+                updateDroneFrequency();
+                gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.1);
+            } else {
+                gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+            }
+        }
+
+        function toggleAnnouncer() {
+            unlockAudio();
+            isAnnouncerOn = !isAnnouncerOn;
+            announcerBtn.innerText = isAnnouncerOn ? "Announcer: ON" : "Announcer: OFF";
+            announcerBtn.className = isAnnouncerOn ? "btn toggle-btn on" : "btn toggle-btn off";
+            voiceStatusIcon.innerText = isAnnouncerOn ? "🗣️ Announcer Active" : "🔇 Announcer Muted";
+            if (!isAnnouncerOn) synth.cancel();
+        }
+
+        function loadVoices() {
+            const voices = synth.getVoices();
+            femaleVoice = voices.find(v => 
+                v.name.includes('Samantha') || v.name.includes('Victoria') || 
+                v.name.includes('Google UK English Female')
+            ) || voices[0];
+        }
+
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        function speakExercise(text) {
+            if (!isAnnouncerOn || isPaused) return;
+            synth.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.voice = femaleVoice;
+            utter.pitch = 1.0;
+            utter.rate = 1.0;
+            synth.speak(utter);
+        }
+
+        function getRandomExercise() {
+            let randomIndex;
+            do { randomIndex = Math.floor(Math.random() * exerciseList.length); } 
+            while (randomIndex === lastExerciseIndex);
+            
+            lastExerciseIndex = randomIndex;
+            const nextExercise = exerciseList[randomIndex];
+            exerciseEl.innerText = nextExercise;
+            
+            if (isBellOn) {
+                bellAudio.currentTime = 0;
+                bellAudio.play().catch(() => {});
+            }
+
+            setTimeout(() => { speakExercise(nextExercise); }, 1500);
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft < 0) {
+                    timeLeft = maxInterval;
+                    getRandomExercise();
+                }
+                timerEl.innerText = timeLeft;
+            }, 1000);
+        }
+
+        function togglePlayPause() {
+            unlockAudio();
+            isPaused = !isPaused;
+            if (isPaused) {
+                playPauseBtn.innerText = "Play";
+                playPauseBtn.className = "btn btn-play";
+                clearInterval(timerInterval);
+            } else {
+                playPauseBtn.innerText = "Pause";
+                playPauseBtn.className = "btn btn-pause";
+                startTimer();
+            }
+        }
+
+        function updateDroneFrequency() { 
+            if (oscillator) oscillator.frequency.setTargetAtTime(parseFloat(document.getElementById('drone-select').value), audioCtx.currentTime, 0.1); 
+        }
+
+        function updateInterval() { 
+            unlockAudio(); 
+            maxInterval = parseInt(inputEl.value); 
+            timeLeft = maxInterval; 
+            timerEl.innerText = timeLeft; 
+            getRandomExercise(); 
+        }
+
+        function triggerNext() { 
+            unlockAudio(); 
+            timeLeft = maxInterval; 
+            timerEl.innerText = timeLeft; 
+            getRandomExercise(); 
+        }
+
+        loadVoices();
+        startTimer();
+    </script>
+</body>
+</html>
